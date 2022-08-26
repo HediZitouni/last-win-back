@@ -5,7 +5,7 @@ import cors from "cors";
 import { getLast, getOrCreateLast, updateLast } from "./last/last.lib";
 import { logCalls } from "./middlewares/log-calls.middleware";
 const app = express();
-const port = 3000;
+const port = 443;
 
 app.use(cors());
 app.use(express.json());
