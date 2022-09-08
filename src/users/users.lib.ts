@@ -1,10 +1,10 @@
-import { Last } from '~/last/last.type';
+import { Last } from '../last/last.type';
 import { toUser, toUserArray, User, UserMongodb } from './users.type';
-import { getOrCreateStats } from '~/stats/stats.lib';
-import { Stats } from '~/stats/stats.type';
-import { getConnection } from '~/config/mongodb';
+import { getOrCreateStats } from '../stats/stats.lib';
+import { Stats } from '../stats/stats.type';
+import { getConnection } from '../config/mongodb';
 import { ObjectId } from 'mongodb';
-import { maxCredit } from '~/credit/credit.lib';
+import { maxCredit } from '../credit/credit.lib';
 
 export async function getUsers(): Promise<User[]> {
 	const { connection, client } = await getConnection('users');
