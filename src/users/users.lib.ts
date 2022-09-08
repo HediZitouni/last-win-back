@@ -4,6 +4,7 @@ import { getOrCreateStats } from '~/stats/stats.lib';
 import { Stats } from '~/stats/stats.type';
 import { getConnection } from '~/config/mongodb';
 import { ObjectId } from 'mongodb';
+import { maxCredit } from '~/credit/credit.lib';
 
 export async function getUsers(): Promise<User[]> {
 	const { connection, client } = await getConnection('users');
@@ -27,7 +28,7 @@ export async function getOrCreateUser(deviceId: string): Promise<User> {
 	if (!user) {
 		const stats = await getOrCreateStats();
 		const userName = generateUserName(stats);
-		await connection.insertOne({ deviceId, name: userName, score: 0 });
+		await connection.insertOne({ deviceId, name: userName, score: 0, credit: maxCredit });
 		const [createdUser] = (await connection.find({ deviceId }).toArray()) as UserMongodb[];
 		return toUser(createdUser);
 	}
