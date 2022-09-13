@@ -11,6 +11,7 @@ export interface UserMongodb extends WithId<Document> {
 export interface User extends UserSafe {
 	id: string;
 	deviceId: string;
+	isLast?: boolean;
 }
 
 export interface UserSafe {

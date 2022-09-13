@@ -39,6 +39,7 @@ app.get('/back/users', async (req, res) => {
 			users.map((user) => {
 				if (user.id === last.idLastUser) {
 					user.score += Math.round(Date.now() / 1000) - last.date;
+					user.isLast = true;
 				}
 			});
 		}
