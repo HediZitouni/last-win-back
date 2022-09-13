@@ -8,6 +8,7 @@ import { initDatabase } from './config/mongodb';
 import { initRestatCreditJob } from './credit/credit.job';
 import { decreaseUserCredit } from './credit/credit.lib';
 import { toUserSafeArray } from './users/users.type';
+import { enhanceUser, enhanceUsers } from './users/users.helper';
 
 const app = express();
 const port = process.env.PORT || 3000;
@@ -24,6 +25,8 @@ app.get('/back/user', async (req, res) => {
 	try {
 		const id = req.query.id as string;
 		const user = await getUserById(id);
+		const last = await getLast();
+		enhanceUser(user, last);
 		res.send(user);
 	} catch (e) {
 		console.log(e);
@@ -36,12 +39,7 @@ app.get('/back/users', async (req, res) => {
 		const users = await getUsers();
 		const last = await getLast();
 		if (last) {
-			users.map((user) => {
-				if (user.id === last.idLastUser) {
-					user.score += Math.round(Date.now() / 1000) - last.date;
-					user.isLast = true;
-				}
-			});
+			enhanceUsers(users, last);
 		}
 		res.send(toUserSafeArray(users));
 	} catch (e) {
