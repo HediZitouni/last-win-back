@@ -53,3 +53,4 @@ function generateUserName(stats: Stats): string {
 	const { users } = stats;
 	return `User_${users + 1}`;
 }
+

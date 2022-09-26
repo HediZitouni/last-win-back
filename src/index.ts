@@ -9,6 +9,8 @@ import { initRestatCreditJob } from './credit/credit.job';
 import { decreaseUserCredit } from './credit/credit.lib';
 import { toUserSafeArray } from './users/users.type';
 import { enhanceUser, enhanceUsers } from './users/users.helper';
+import { GameInput } from './game/game.type';
+import { createGame, getGameById, launchGame, setUserReady } from './game/game.lib';
 
 const app = express();
 const port = process.env.PORT || 3000;
@@ -28,6 +30,18 @@ app.get('/back/user', async (req, res) => {
 		const last = await getLast();
 		enhanceUser(user, last);
 		res.send(user);
+	} catch (e) {
+		console.log(e);
+		res.send(e);
+	}
+});
+
+app.get('/back/user-ready', async (req, res) => {
+	try {
+		const { idGame, idUser } = req.body;
+		await setUserReady(idGame, idUser);
+
+		res.send('User ready');
 	} catch (e) {
 		console.log(e);
 		res.send(e);
@@ -84,6 +98,39 @@ app.put('/back/users', async (req, res) => {
 		await setUserName(id, name);
 		const user = await getUserById(id);
 		res.send(user);
+	} catch (e) {
+		console.log(e);
+		res.send(e);
+	}
+});
+
+app.post('/back/games', async (req, res) => {
+	try {
+		const gameInput: GameInput = req.body;
+		const idGame = await createGame(gameInput);
+		res.send({ idGame });
+	} catch (e) {
+		console.log(e);
+		res.send(e);
+	}
+});
+
+app.patch('/back/games', async (req, res) => {
+	try {
+		const { idGame, idUser } = req.body;
+		await launchGame(idGame, idUser);
+		res.send('Game launched');
+	} catch (e) {
+		console.log(e);
+		res.send(e);
+	}
+});
+
+app.get('/back/game', async (req, res) => {
+	try {
+		const id = req.query.id as string;
+		const game = await getGameById(id);
+		res.send(game);
 	} catch (e) {
 		console.log(e);
 		res.send(e);
