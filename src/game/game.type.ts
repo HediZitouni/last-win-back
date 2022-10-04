@@ -22,6 +22,6 @@ export interface GameInput {
 }
 
 interface UserReady {
-	user: string;
+	idUser: string;
 	ready: boolean;
 }

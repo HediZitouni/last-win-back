@@ -10,7 +10,7 @@ import { decreaseUserCredit } from './credit/credit.lib';
 import { toUserSafeArray } from './users/users.type';
 import { enhanceUser, enhanceUsers } from './users/users.helper';
 import { GameInput } from './game/game.type';
-import { createGame, getGameById, launchGame, setUserReady } from './game/game.lib';
+import { createGame, getGameById, getIdGameByHashtag, joinGame, launchGame, setUserReady } from './game/game.lib';
 
 const app = express();
 const port = process.env.PORT || 3000;
@@ -131,6 +131,28 @@ app.get('/back/game', async (req, res) => {
 		const id = req.query.id as string;
 		const game = await getGameById(id);
 		res.send(game);
+	} catch (e) {
+		console.log(e);
+		res.send(e);
+	}
+});
+
+app.get('/back/id-game', async (req, res) => {
+	try {
+		const hashtag = req.query.hashtag as string;
+		const idGame = await getIdGameByHashtag(hashtag);
+		idGame ? res.send({ idGame }) : res.status(204).send();
+	} catch (e) {
+		console.log(e);
+		res.send(e);
+	}
+});
+
+app.patch('/back/join-game', async (req, res) => {
+	try {
+		const { idGame, idUser } = req.body;
+		await joinGame(idGame, idUser);
+		res.send();
 	} catch (e) {
 		console.log(e);
 		res.send(e);

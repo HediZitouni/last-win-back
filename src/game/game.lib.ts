@@ -37,3 +37,22 @@ export async function getGameById(idGame: string): Promise<Game> {
 	client.close();
 	return game;
 }
+
+export async function getIdGameByHashtag(hashtag: string): Promise<string> {
+	const { connection, client } = await getConnection('game');
+	const game = (await connection.findOne({ hashtag })) as Game;
+	client.close();
+	return game?._id.toString() || '';
+}
+
+export async function joinGame(idGame: string, idUser: string) {
+	const game = await getGameById(idGame);
+	if (!game) return;
+
+	const idUsers = game.users?.map(({ idUser }) => idUser.toString());
+	if (idUsers?.includes(idUser)) return;
+
+	const { connection, client } = await getConnection('game');
+	await connection.updateOne({ _id: new ObjectId(idGame) }, { $push: { users: { idUser: new ObjectId(idUser), ready: false } } });
+	client.close();
+}
