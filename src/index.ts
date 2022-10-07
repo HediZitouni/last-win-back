@@ -1,5 +1,7 @@
 import 'dotenv/config';
 import express from 'express';
+import http from 'http';
+import WebSocket from 'ws';
 import { getUsers, setUserScore, getOrCreateUser, setUserName, getUserById } from './users/users.lib';
 import cors from 'cors';
 import { getLast, getOrCreateLast, updateLast } from './last/last.lib';
@@ -19,6 +21,21 @@ app.use(cors());
 app.use(express.json());
 app.use(logCalls);
 
+const server = http.createServer(app);
+const wss = new WebSocket.Server({ server });
+
+wss.on('connection', function connection(ws) {
+	ws.on('message', (message, isBinary) => {
+		console.log(message.toString(), isBinary);
+
+		wss.clients.forEach((client) => {
+			if (client.readyState === WebSocket.OPEN) {
+				client.send(message.toString());
+			}
+		});
+	});
+});
+
 app.get('/back', async (req, res) => {
 	res.send('Hello world!');
 });
@@ -36,7 +53,7 @@ app.get('/back/user', async (req, res) => {
 	}
 });
 
-app.get('/back/user-ready', async (req, res) => {
+app.patch('/back/user-ready', async (req, res) => {
 	try {
 		const { idGame, idUser } = req.body;
 		await setUserReady(idGame, idUser);
