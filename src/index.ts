@@ -13,28 +13,16 @@ import { toUserSafeArray } from './users/users.type';
 import { enhanceUser, enhanceUsers } from './users/users.helper';
 import { GameInput } from './game/game.type';
 import { createGame, getGameById, getIdGameByHashtag, joinGame, launchGame, setUserReady } from './game/game.lib';
+import { getWsById, setupWebSocket } from './config/websocket/websocket';
 
 const app = express();
+const server = http.createServer(app);
+setupWebSocket(server);
 const port = process.env.PORT || 3000;
 
 app.use(cors());
 app.use(express.json());
 app.use(logCalls);
-
-const server = http.createServer(app);
-const wss = new WebSocket.Server({ server });
-
-wss.on('connection', function connection(ws) {
-	ws.on('message', (message, isBinary) => {
-		console.log(message.toString(), isBinary);
-
-		wss.clients.forEach((client) => {
-			if (client.readyState === WebSocket.OPEN) {
-				client.send(message.toString());
-			}
-		});
-	});
-});
 
 app.get('/back', async (req, res) => {
 	res.send('Hello world!');
@@ -57,7 +45,10 @@ app.patch('/back/user-ready', async (req, res) => {
 	try {
 		const { idGame, idUser } = req.body;
 		await setUserReady(idGame, idUser);
-
+		const game = await getGameById(idGame);
+		const idUsers = game.users ? game.users.map((user) => user.idUser) : [];
+		const socketsOfGame = getWsById(idUsers);
+		socketsOfGame.forEach((s) => s.send(JSON.stringify({ message: 'userReady', content: { idUser, ready: true } })));
 		res.send('User ready');
 	} catch (e) {
 		console.log(e);
@@ -169,6 +160,10 @@ app.patch('/back/join-game', async (req, res) => {
 	try {
 		const { idGame, idUser } = req.body;
 		await joinGame(idGame, idUser);
+		const game = await getGameById(idGame);
+		const idUsers = game.users ? game.users.map((user) => user.idUser) : [];
+		const socketsOfGame = getWsById(idUsers);
+		socketsOfGame.forEach((s) => s.send(JSON.stringify({ message: 'userReady', content: { idUser, ready: false } })));
 		res.send();
 	} catch (e) {
 		console.log(e);
@@ -176,7 +171,7 @@ app.patch('/back/join-game', async (req, res) => {
 	}
 });
 
-app.listen(port, async () => {
+server.listen(process.env.PORT || 3000, async () => {
 	console.log(`Example app listening on port ${port}`);
 	await initDatabase();
 	await initRestatCreditJob();

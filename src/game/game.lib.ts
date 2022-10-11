@@ -35,7 +35,10 @@ export async function getGameById(idGame: string): Promise<Game> {
 	const { connection, client } = await getConnection('game');
 	const game = (await connection.findOne({ _id: new ObjectId(idGame) })) as Game;
 	client.close();
-	if (game) game.id = game._id.toString();
+	if (game) {
+		game.id = game._id.toString();
+		game.users?.forEach((user) => (user.idUser = user.idUser.toString()));
+	}
 	return game;
 }
 
