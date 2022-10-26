@@ -1,5 +1,6 @@
 import { ObjectId } from "mongodb";
 import { getWsById } from "~/config/websocket/websocket";
+import { addGameToUser } from "~/users/users.lib";
 import { getConnection } from "../config/mongodb";
 import { Game, GameInput } from "./game.type";
 
@@ -10,6 +11,7 @@ export async function createGame(gameInput: GameInput): Promise<string> {
     ...gameInput,
     hashtag: `${Math.round(Date.now() / 1000)}`,
     users: [{ idUser: new ObjectId(idOwner), ready: true }],
+    last: { idUser: null, date: null },
   });
   client.close();
   return insertedId.toString();
@@ -77,5 +79,6 @@ export async function joinGame(idGame: string, idUser: string) {
     { _id: new ObjectId(idGame) },
     { $push: { users: { idUser: new ObjectId(idUser), ready: false } } }
   );
+  await addGameToUser(idGame, idUser);
   client.close();
 }

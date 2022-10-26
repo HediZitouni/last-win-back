@@ -11,6 +11,12 @@ export interface Game extends WithId<Document> {
   idOwner: string;
   users?: UserReady[];
   startedAt?: number;
+  last: Last;
+}
+
+interface Last {
+  idUser: string;
+  date: number;
 }
 
 export interface GameInput {
