@@ -1,11 +1,15 @@
 import { ObjectId } from "mongodb";
 import { getConnection } from "../config/mongodb";
-import { Last } from "./last.type";
+import { Last, LastMongo } from "./last.type";
 
 export async function getLast(idGame: string): Promise<Last> {
   const { connection, client } = await getConnection("game");
-  const last = (await connection.findOne({ _id: new ObjectId(idGame) })) as Last;
+  const lastMongo = (await connection.findOne(
+    { _id: new ObjectId(idGame) },
+    { projection: { _id: 0, last: 1 } }
+  )) as LastMongo;
   client.close();
+  const { _id, ...last } = lastMongo;
   return last;
 }
 

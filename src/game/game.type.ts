@@ -9,7 +9,7 @@ export interface Game extends WithId<Document> {
   blind: boolean;
   maxPlayers: number; // To avoid bots
   idOwner: string;
-  users?: UserReady[];
+  users?: UserInGame[];
   startedAt?: number;
   last: Last;
 }
@@ -28,7 +28,9 @@ export interface GameInput {
   idOwner?: string;
 }
 
-interface UserReady {
+export interface UserInGame {
   idUser: string;
   ready: boolean;
+  credit: number;
+  score: number;
 }

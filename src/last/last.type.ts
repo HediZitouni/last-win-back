@@ -1,9 +1,11 @@
 import { Document, WithId } from "mongodb";
 
-interface Last extends WithId<Document> {
-  id: string;
+export interface LastMongo extends WithId<Document> {
   idUser: string;
   date: number;
 }
 
-export { Last };
+export interface Last {
+  idUser: string;
+  date: number;
+}

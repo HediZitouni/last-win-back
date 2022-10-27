@@ -1,5 +1,6 @@
 import { ObjectId } from "mongodb";
 import { getWsById } from "~/config/websocket/websocket";
+import { maxCredit } from "~/credit/credit.lib";
 import { addGameToUser } from "~/users/users.lib";
 import { getConnection } from "../config/mongodb";
 import { Game, GameInput } from "./game.type";
@@ -10,7 +11,7 @@ export async function createGame(gameInput: GameInput): Promise<string> {
   const { insertedId } = await connection.insertOne({
     ...gameInput,
     hashtag: `${Math.round(Date.now() / 1000)}`,
-    users: [{ idUser: new ObjectId(idOwner), ready: true }],
+    users: [{ idUser: new ObjectId(idOwner), ready: true, credit: maxCredit, score: 0 }],
     last: { idUser: null, date: null },
   });
   client.close();
@@ -77,7 +78,7 @@ export async function joinGame(idGame: string, idUser: string) {
   const { connection, client } = await getConnection("game");
   await connection.updateOne(
     { _id: new ObjectId(idGame) },
-    { $push: { users: { idUser: new ObjectId(idUser), ready: false } } }
+    { $push: { users: { idUser: new ObjectId(idUser), ready: false, credit: maxCredit, score: 0 } } }
   );
   await addGameToUser(idGame, idUser);
   client.close();

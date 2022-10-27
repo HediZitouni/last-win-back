@@ -14,11 +14,14 @@ export async function getUsers(): Promise<User[]> {
   return toUserArray(users);
 }
 
-export async function setUserScore(last: Last, newDateLast: number) {
-  const { connection, client } = await getConnection("users");
+export async function setUserScore(idGame: string, last: Last, newDateLast: number) {
+  const { connection, client } = await getConnection("game");
   const { idUser, date } = last;
   const scoreToAdd = newDateLast - date;
-  await connection.updateOne({ _id: new ObjectId(idUser) }, { $inc: { score: scoreToAdd } });
+  await connection.updateOne(
+    { _id: new ObjectId(idGame), "users.idUser": new ObjectId(idUser) },
+    { $inc: { "users.$.score": scoreToAdd } }
+  );
   client.close();
 }
 

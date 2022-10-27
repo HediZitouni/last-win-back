@@ -10,7 +10,7 @@ import { initDatabase } from "./config/mongodb";
 import { initRestatCreditJob } from "./credit/credit.job";
 import { decreaseUserCredit } from "./credit/credit.lib";
 import { toUserSafeArray } from "./users/users.type";
-import { enhanceUser, enhanceUsers } from "./users/users.helper";
+import { enhanceUser, enhanceUsers, getUserInUsers } from "./users/users.helper";
 import { GameInput } from "./game/game.type";
 import { createGame, getGameById, getIdGameByHashtag, joinGame, launchGame, setUserReady } from "./game/game.lib";
 import { getWsById, setupWebSocket } from "./config/websocket/websocket";
@@ -72,12 +72,12 @@ app.put("/back/last", async (req, res) => {
   try {
     const { idGame, idUser } = req.body;
     const newDateLast = Math.round(Date.now() / 1000);
-    const user = await getUserById(idUser);
+    const { last, users } = await getGameById(idGame);
+    const user = getUserInUsers(idUser, users);
     if (user.credit < 1) return res.send("User has no credit");
 
-    const last = await getLast(idGame);
     if (last.idUser !== idUser) {
-      await setUserScore(last, newDateLast);
+      await setUserScore(idGame, last, newDateLast);
       await decreaseUserCredit(idUser);
       await updateLast(idGame, idUser, newDateLast);
     }
