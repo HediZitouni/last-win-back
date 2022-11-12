@@ -10,7 +10,7 @@ import { initDatabase } from "./config/mongodb";
 import { initRestatCreditJob } from "./credit/credit.job";
 import { decreaseUserCredit } from "./credit/credit.lib";
 import { toUserSafeArray } from "./users/users.type";
-import { enhanceUser, enhanceUsers, getUserInUsers } from "./users/users.helper";
+import { getUserInUsers } from "./users/users.helper";
 import { GameInput } from "./game/game.type";
 import { createGame, getGameById, getIdGameByHashtag, joinGame, launchGame, setUserReady } from "./game/game.lib";
 import { getWsById, setupWebSocket } from "./config/websocket/websocket";
@@ -54,20 +54,6 @@ app.patch("/back/user-ready", async (req, res) => {
   }
 });
 
-app.get("/back/users", async (req, res) => {
-  try {
-    const { idGame } = req.query as { idGame: string };
-    const users = await getGameUsers(idGame);
-    const last = await getLast(idGame);
-    if (last) {
-      enhanceUsers(users, last);
-    }
-    res.send(toUserSafeArray(users));
-  } catch (e) {
-    res.send(e);
-  }
-});
-
 app.put("/back/last", async (req, res) => {
   try {
     const { idGame, idUser } = req.body;
@@ -78,8 +64,11 @@ app.put("/back/last", async (req, res) => {
 
     if (last.idUser !== idUser) {
       await setUserScore(idGame, last, newDateLast);
-      await decreaseUserCredit(idUser);
+      await decreaseUserCredit(idGame, idUser);
       await updateLast(idGame, idUser, newDateLast);
+      const idUsers = users ? users.map((user) => user.idUser) : [];
+      const socketsOfGame = getWsById(idUsers);
+      socketsOfGame.forEach((s) => s.send(JSON.stringify({ message: "lastChanged" })));
     }
     res.send("Update done!");
   } catch (e) {

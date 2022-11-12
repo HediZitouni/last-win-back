@@ -1,6 +1,6 @@
-import cron from 'node-cron';
-import { setUserCredit } from './credit.lib';
+import cron from "node-cron";
+import { setUserCredit } from "./credit.lib";
 
 export function initRestatCreditJob() {
-	cron.schedule('0 0 * * * *', setUserCredit);
+  cron.schedule("0 0 * * * *", setUserCredit);
 }

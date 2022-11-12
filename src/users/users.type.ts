@@ -4,8 +4,6 @@ export interface UserMongodb extends WithId<Document> {
   _id: ObjectId;
   deviceId: ObjectId;
   name: string;
-  score: number;
-  credit: number;
 }
 
 export interface User extends UserSafe {
@@ -17,8 +15,6 @@ export interface User extends UserSafe {
 
 export interface UserSafe {
   name: string;
-  score: number;
-  credit: number;
 }
 
 export function toUser(userMongodb: UserMongodb): User {

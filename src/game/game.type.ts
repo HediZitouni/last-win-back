@@ -25,7 +25,7 @@ export interface GameInput {
   time?: number;
   blind?: boolean;
   maxPlayers?: number;
-  idOwner?: string;
+  idOwner: string;
 }
 
 export interface UserInGame {

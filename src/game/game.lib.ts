@@ -14,8 +14,10 @@ export async function createGame(gameInput: GameInput): Promise<string> {
     users: [{ idUser: new ObjectId(idOwner), ready: true, credit: maxCredit, score: 0 }],
     last: { idUser: null, date: null },
   });
+  const idGame = insertedId.toString();
+  await addGameToUser(idGame, idOwner);
   client.close();
-  return insertedId.toString();
+  return idGame;
 }
 
 export async function launchGame(idGame: string, idUser: string) {

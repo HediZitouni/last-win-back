@@ -1,16 +1,12 @@
-import { UserInGame } from "~/game/game.type";
-import { Last } from "~/last/last.type";
+import { Game, UserInGame } from "~/game/game.type";
 import { User } from "./users.type";
 
-export function enhanceUser(user: User, last: Last) {
-  if (user.id === last.idUser) {
-    user.score += Math.round(Date.now() / 1000) - last.date;
-    user.isLast = true;
+export function enhanceUser(user: User, game: Game) {
+  if (!game.users) return;
+  const indexUser = game.users.findIndex(({ idUser }) => idUser === user.id);
+  if (indexUser !== -1) {
+    game.users[indexUser].score += Math.round(Date.now() / 1000) - game.last.date;
   }
-}
-
-export function enhanceUsers(users: User[], last: Last) {
-  users.forEach((user) => enhanceUser(user, last));
 }
 
 export function getUserInUsers(idUser: string, users?: UserInGame[]): UserInGame {
