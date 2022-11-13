@@ -39,6 +39,17 @@ app.get("/back/user", async (req, res) => {
   }
 });
 
+app.get("/back/users", async (req, res) => {
+  try {
+    const { idGame } = req.query as { idGame: string };
+    const user = await getGameUsers(idGame);
+    res.send(user);
+  } catch (e) {
+    console.log(e);
+    res.send(e);
+  }
+});
+
 app.patch("/back/user-ready", async (req, res) => {
   try {
     const { idGame, idUser } = req.body;

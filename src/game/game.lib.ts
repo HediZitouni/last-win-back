@@ -33,11 +33,13 @@ export async function launchGame(idGame: string, idUser: string) {
   if (game.startedAt) {
     throw new Error("Game already started");
   }
+  const startedAt = Math.round(Date.now() / 1000);
+  const endedAt = startedAt + Math.round(game.time * 60);
+  await connection.updateOne({ _id }, { $set: { startedAt, endedAt } });
   const socketsOfGame = getWsById(game.users?.map(({ idUser }) => idUser.toString()) || []);
   socketsOfGame.forEach((s) =>
     s.send(JSON.stringify({ message: "gameStarted", content: { idGame: game._id.toString() } }))
   );
-  await connection.updateOne({ _id }, { $set: { startedAt: Math.round(Date.now() / 1000) } });
   client.close();
 }
 

@@ -67,9 +67,10 @@ function generateUserName(stats: Stats): string {
 }
 
 export async function getGameUsers(idGame: string): Promise<User[]> {
-  const game = await getGameById(idGame);
-  const ids = game.users?.map(({ idUser }) => idUser) || [];
-  return await getUsersByIds(ids);
+  const { connection, client } = await getConnection("users");
+  const users = (await connection.find({ games: idGame }).toArray()) as UserMongodb[];
+  client.close();
+  return toUserArray(users);
 }
 
 export async function addGameToUser(idGame: string, idUser: string) {
