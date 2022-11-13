@@ -48,7 +48,21 @@ export async function setUserName(id: string, name: string) {
 
 export async function getUserById(id: string): Promise<User> {
   const { connection, client } = await getConnection("users");
-  const user = (await connection.findOne({ _id: new ObjectId(id) })) as UserMongodb;
+  const user = (
+    await connection
+      .aggregate([
+        { $match: { _id: new ObjectId(id) } },
+        { $unwind: { path: "$games" } },
+        { $lookup: { from: "game", localField: "games", foreignField: "_id", as: "games" } },
+        { $unwind: { path: "$games" } },
+        { $group: { _id: "$_id", games: { $push: "$games" } } },
+        { $lookup: { from: "users", localField: "_id", foreignField: "_id", as: "userDetails" } },
+        { $unwind: { path: "$userDetails" } },
+        { $addFields: { "userDetails.games": "$games" } },
+        { $replaceRoot: { newRoot: "$userDetails" } },
+      ])
+      .toArray()
+  )[0] as UserMongodb;
   client.close();
   return toUser(user);
 }
@@ -66,15 +80,15 @@ function generateUserName(stats: Stats): string {
   return `User_${users + 1}`;
 }
 
-export async function getGameUsers(idGame: string): Promise<User[]> {
+export async function getUserByIdGame(idGame: string): Promise<User[]> {
   const { connection, client } = await getConnection("users");
-  const users = (await connection.find({ games: idGame }).toArray()) as UserMongodb[];
+  const users = (await connection.find({ games: new ObjectId(idGame) }).toArray()) as UserMongodb[];
   client.close();
   return toUserArray(users);
 }
 
 export async function addGameToUser(idGame: string, idUser: string) {
   const { connection, client } = await getConnection("users");
-  await connection.updateOne({ _id: new ObjectId(idUser) }, { $push: { games: idGame } });
+  await connection.updateOne({ _id: new ObjectId(idUser) }, { $push: { games: new ObjectId(idGame) } });
   client.close();
 }

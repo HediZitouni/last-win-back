@@ -2,7 +2,7 @@ import "dotenv/config";
 import express from "express";
 import http from "http";
 import WebSocket from "ws";
-import { getUsers, setUserScore, getOrCreateUser, setUserName, getUserById, getGameUsers } from "./users/users.lib";
+import { getUsers, setUserScore, getOrCreateUser, setUserName, getUserById, getUserByIdGame } from "./users/users.lib";
 import cors from "cors";
 import { getLast, updateLast } from "./last/last.lib";
 import { logCalls } from "./middlewares/log-calls.middleware";
@@ -42,7 +42,7 @@ app.get("/back/user", async (req, res) => {
 app.get("/back/users", async (req, res) => {
   try {
     const { idGame } = req.query as { idGame: string };
-    const user = await getGameUsers(idGame);
+    const user = await getUserByIdGame(idGame);
     res.send(user);
   } catch (e) {
     console.log(e);
