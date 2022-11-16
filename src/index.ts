@@ -12,7 +12,7 @@ import { decreaseUserCredit } from "./credit/credit.lib";
 import { toUserSafeArray } from "./users/users.type";
 import { getUserInUsers } from "./users/users.helper";
 import { GameInput } from "./game/game.type";
-import { createGame, getGameById, getIdGameByHashtag, joinGame, launchGame, setUserReady } from "./game/game.lib";
+import { createGame, getGameById, getGameByHashtag, joinGame, launchGame, setUserReady } from "./game/game.lib";
 import { getWsById, setupWebSocket } from "./config/websocket/websocket";
 
 const app = express();
@@ -146,9 +146,11 @@ app.get("/back/game", async (req, res) => {
 
 app.get("/back/id-game", async (req, res) => {
   try {
-    const hashtag = req.query.hashtag as string;
-    const idGame = await getIdGameByHashtag(hashtag);
-    idGame ? res.send({ idGame }) : res.status(204).send();
+    const { hashtag, idUser } = req.query as { hashtag: string; idUser: string };
+    const game = await getGameByHashtag(hashtag);
+    if (!game) res.status(204).send();
+    if (game.users?.some(({ idUser: idUig }) => idUser === idUig)) res.status(403).send();
+    res.send({ idGame: game._id.toString() });
   } catch (e) {
     console.log(e);
     res.send(e);
@@ -164,9 +166,9 @@ app.patch("/back/join-game", async (req, res) => {
     const socketsOfGame = getWsById(idUsers);
     socketsOfGame.forEach((s) => s.send(JSON.stringify({ message: "userReady", content: { idUser, ready: false } })));
     res.send();
-  } catch (e) {
+  } catch (e: any) {
     console.log(e);
-    res.send(e);
+    res.send({ message: e.message });
   }
 });
 

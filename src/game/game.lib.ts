@@ -63,11 +63,11 @@ export async function getGameById(idGame: string): Promise<Game> {
   return game;
 }
 
-export async function getIdGameByHashtag(hashtag: string): Promise<string> {
+export async function getGameByHashtag(hashtag: string): Promise<Game> {
   const { connection, client } = await getConnection("game");
   const game = (await connection.findOne({ hashtag })) as Game;
   client.close();
-  return game?._id.toString() || "";
+  return game;
 }
 
 export async function joinGame(idGame: string, idUser: string) {
