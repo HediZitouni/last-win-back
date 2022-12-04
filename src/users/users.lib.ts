@@ -4,8 +4,6 @@ import { getOrCreateStats } from "../stats/stats.lib";
 import { Stats } from "../stats/stats.type";
 import { getConnection } from "../config/mongodb";
 import { ObjectId } from "mongodb";
-import { maxCredit } from "../credit/credit.lib";
-import { getGameById } from "~/game/game.lib";
 
 export async function getUsers(): Promise<User[]> {
   const { connection, client } = await getConnection("users");
@@ -32,7 +30,7 @@ export async function getOrCreateUser(deviceId: string): Promise<User> {
   if (!user) {
     const stats = await getOrCreateStats();
     const userName = generateUserName(stats);
-    await connection.insertOne({ deviceId, name: userName });
+    await connection.insertOne({ deviceId, name: userName, games: [] });
     const [createdUser] = (await connection.find({ deviceId }).toArray()) as UserMongodb[];
     return toUser(createdUser);
   }
@@ -52,12 +50,12 @@ export async function getUserById(id: string): Promise<User> {
     await connection
       .aggregate([
         { $match: { _id: new ObjectId(id) } },
-        { $unwind: { path: "$games" } },
+        { $unwind: { path: "$games", preserveNullAndEmptyArrays: true } },
         { $lookup: { from: "game", localField: "games", foreignField: "_id", as: "games" } },
-        { $unwind: { path: "$games" } },
+        { $unwind: { path: "$games", preserveNullAndEmptyArrays: true } },
         { $group: { _id: "$_id", games: { $push: "$games" } } },
         { $lookup: { from: "users", localField: "_id", foreignField: "_id", as: "userDetails" } },
-        { $unwind: { path: "$userDetails" } },
+        { $unwind: { path: "$userDetails", preserveNullAndEmptyArrays: true } },
         { $addFields: { "userDetails.games": "$games" } },
         { $replaceRoot: { newRoot: "$userDetails" } },
       ])

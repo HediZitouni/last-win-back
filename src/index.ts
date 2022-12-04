@@ -1,15 +1,12 @@
 import "dotenv/config";
 import express from "express";
 import http from "http";
-import WebSocket from "ws";
-import { getUsers, setUserScore, getOrCreateUser, setUserName, getUserById, getUserByIdGame } from "./users/users.lib";
+import { setUserScore, getOrCreateUser, setUserName, getUserById, getUserByIdGame } from "./users/users.lib";
 import cors from "cors";
-import { getLast, updateLast } from "./last/last.lib";
+import { updateLast } from "./last/last.lib";
 import { logCalls } from "./middlewares/log-calls.middleware";
 import { initDatabase } from "./config/mongodb";
-import { initRestatCreditJob } from "./credit/credit.job";
 import { decreaseUserCredit } from "./credit/credit.lib";
-import { toUserSafeArray } from "./users/users.type";
 import { getUserInUsers } from "./users/users.helper";
 import { GameInput } from "./game/game.type";
 import { createGame, getGameById, getGameByHashtag, joinGame, launchGame, setUserReady } from "./game/game.lib";
@@ -148,7 +145,7 @@ app.get("/back/id-game", async (req, res) => {
   try {
     const { hashtag, idUser } = req.query as { hashtag: string; idUser: string };
     const game = await getGameByHashtag(hashtag);
-    if (!game) res.status(204).send();
+    if (!game) return res.status(204).send();
     if (game.users?.some(({ idUser: idUig }) => idUser === idUig)) res.status(403).send();
     res.send({ idGame: game._id.toString() });
   } catch (e) {
@@ -162,10 +159,11 @@ app.patch("/back/join-game", async (req, res) => {
     const { idGame, idUser } = req.body;
     await joinGame(idGame, idUser);
     const game = await getGameById(idGame);
+    if (!game) res.status(204).send();
     const idUsers = game.users ? game.users.map((user) => user.idUser) : [];
     const socketsOfGame = getWsById(idUsers);
     socketsOfGame.forEach((s) => s.send(JSON.stringify({ message: "userReady", content: { idUser, ready: false } })));
-    res.send();
+    res.send({});
   } catch (e: any) {
     console.log(e);
     res.send({ message: e.message });
@@ -175,5 +173,5 @@ app.patch("/back/join-game", async (req, res) => {
 server.listen(process.env.PORT || 3000, async () => {
   console.log(`Example app listening on port ${port}`);
   await initDatabase();
-  await initRestatCreditJob();
+  //await initRestatCreditJob();
 });

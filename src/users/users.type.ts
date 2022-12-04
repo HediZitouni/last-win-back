@@ -1,5 +1,4 @@
 import { Document, ObjectId, WithId } from "mongodb";
-import { toUSVString } from "util";
 import { Game } from "~/game/game.type";
 
 export interface UserMongodb extends WithId<Document> {

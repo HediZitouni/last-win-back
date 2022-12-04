@@ -1,6 +1,6 @@
 import { ObjectId } from "mongodb";
 import { getWsById } from "~/config/websocket/websocket";
-import { maxCredit } from "~/credit/credit.lib";
+import { enhanceUser } from "~/users/users.helper";
 import { addGameToUser } from "~/users/users.lib";
 import { getConnection } from "../config/mongodb";
 import { Game, GameInput } from "./game.type";
@@ -11,7 +11,7 @@ export async function createGame(gameInput: GameInput): Promise<string> {
   const { insertedId } = await connection.insertOne({
     ...gameInput,
     hashtag: `${Math.round(Date.now() / 1000)}`,
-    users: [{ idUser: new ObjectId(idOwner), ready: true, credit: maxCredit, score: 0 }],
+    users: [{ idUser: new ObjectId(idOwner), ready: true, credit: gameInput.credits, score: 0 }],
     last: { idUser: null, date: null },
   });
   const idGame = insertedId.toString();
@@ -60,6 +60,7 @@ export async function getGameById(idGame: string): Promise<Game> {
     game.id = game._id.toString();
     game.users?.forEach((user) => (user.idUser = user.idUser.toString()));
   }
+  await enhanceUser(game);
   return game;
 }
 
@@ -67,6 +68,7 @@ export async function getGameByHashtag(hashtag: string): Promise<Game> {
   const { connection, client } = await getConnection("game");
   const game = (await connection.findOne({ hashtag })) as Game;
   client.close();
+  await enhanceUser(game);
   return game;
 }
 
@@ -82,7 +84,7 @@ export async function joinGame(idGame: string, idUser: string) {
   const { connection, client } = await getConnection("game");
   await connection.updateOne(
     { _id: new ObjectId(idGame) },
-    { $push: { users: { idUser: new ObjectId(idUser), ready: false, credit: maxCredit, score: 0 } } }
+    { $push: { users: { idUser: new ObjectId(idUser), ready: false, credit: game.credits, score: 0 } } }
   );
   await addGameToUser(idGame, idUser);
   client.close();

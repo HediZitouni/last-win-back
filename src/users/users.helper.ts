@@ -1,11 +1,11 @@
 import { Game, UserInGame } from "~/game/game.type";
-import { User } from "./users.type";
 
-export function enhanceUser(user: User, game: Game) {
+export function enhanceUser(game: Game) {
   if (!game.users) return;
-  const indexUser = game.users.findIndex(({ idUser }) => idUser === user.id);
+  const indexUser = game.users.findIndex(({ idUser }) => idUser === game.last.idUser);
   if (indexUser !== -1) {
-    game.users[indexUser].score += Math.round(Date.now() / 1000) - game.last.date;
+    const dateNow = Math.round(Date.now() / 1000);
+    game.users[indexUser].score += Math.min(dateNow, game.endedAt) - game.last.date;
   }
 }
 
