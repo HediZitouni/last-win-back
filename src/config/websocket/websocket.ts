@@ -39,10 +39,19 @@ export function setupWebSocket(server: http.Server) {
   });
 }
 
-export function getWsById(idWebSockets: string[]): WebSocket[] {
+export function getWsById(idWebSockets: string[], action?: string): WebSocket[] {
   const websockets: WebSocket[] = [];
   idWebSockets.forEach((id) => {
-    if (clients.has(id)) websockets.push(clients.get(id));
+    if (clients.has(id)) {
+      websockets.push(clients.get(id));
+    }
   });
+  logSockets(websockets, action);
   return websockets;
+}
+
+export function logSockets(ws: WebSocket[], action?: string) {
+  if (!action) return;
+  const ids = ws.map((ws) => clientsToIds.get(ws) || "idVide");
+  console.log(action, ids);
 }

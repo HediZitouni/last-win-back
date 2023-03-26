@@ -54,6 +54,11 @@ app.patch("/back/user-ready", async (req, res) => {
     const game = await getGameById(idGame);
     const idUsers = game.users ? game.users.map((user) => user.idUser) : [];
     const socketsOfGame = getWsById(idUsers);
+    if (socketsOfGame.length === idUsers.length) {
+      console.log(`send to ${idUsers} userReady`);
+    } else {
+      console.log(`one of ${idUsers} dont get userReady`);
+    }
     socketsOfGame.forEach((s) => s.send(JSON.stringify({ message: "userReady", content: { idUser, ready: true } })));
     res.send("User ready");
   } catch (e) {
@@ -75,7 +80,7 @@ app.put("/back/last", async (req, res) => {
       await decreaseUserCredit(idGame, idUser);
       await updateLast(idGame, idUser, newDateLast);
       const idUsers = users ? users.map((user) => user.idUser) : [];
-      const socketsOfGame = getWsById(idUsers);
+      const socketsOfGame = getWsById(idUsers, "lastChanged");
       socketsOfGame.forEach((s) => s.send(JSON.stringify({ message: "lastChanged" })));
     }
     res.send("Update done!");
@@ -162,6 +167,11 @@ app.patch("/back/join-game", async (req, res) => {
     if (!game) res.status(204).send();
     const idUsers = game.users ? game.users.map((user) => user.idUser) : [];
     const socketsOfGame = getWsById(idUsers);
+    if (socketsOfGame.length === idUsers.length) {
+      console.log(`send to ${idUsers} userReady2`);
+    } else {
+      console.log(`one of ${idUsers} dont get userReady2`);
+    }
     socketsOfGame.forEach((s) => s.send(JSON.stringify({ message: "userReady", content: { idUser, ready: false } })));
     res.send({});
   } catch (e: any) {
