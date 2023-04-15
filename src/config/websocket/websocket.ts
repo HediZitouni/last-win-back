@@ -35,7 +35,9 @@ export function setupWebSocket(server: http.Server) {
     });
 
     //send immediatly a feedback to the incoming connection
-    ws.send(JSON.stringify({ message: "welcome", content: "Websocket connection established successfully" }));
+    ws.send(
+      JSON.stringify({ message: "welcome", content: "Websocket connection established successfully", type: "WELCOME" })
+    );
   });
 }
 
