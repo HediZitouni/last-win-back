@@ -59,7 +59,9 @@ app.patch("/back/user-ready", async (req, res) => {
     } else {
       console.log(`one of ${idUsers} dont get userReady`);
     }
-    socketsOfGame.forEach((s) => s.send(JSON.stringify({ message: "userReady", content: { idUser, ready: true } })));
+    socketsOfGame.forEach((s) =>
+      s.send(JSON.stringify({ type: "userReady", content: { idGame, idUser, ready: true } }))
+    );
     res.send("User ready");
   } catch (e) {
     console.log(e);
@@ -172,7 +174,9 @@ app.patch("/back/join-game", async (req, res) => {
     } else {
       console.log(`one of ${idUsers} dont get userReady2`);
     }
-    socketsOfGame.forEach((s) => s.send(JSON.stringify({ message: "userReady", content: { idUser, ready: false } })));
+    socketsOfGame.forEach((s) =>
+      s.send(JSON.stringify({ type: "userReady", content: { idGame, idUser, ready: false } }))
+    );
     res.send({});
   } catch (e: any) {
     console.log(e);

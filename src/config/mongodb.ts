@@ -1,5 +1,5 @@
 import { MongoClient } from "mongodb";
-const url = "mongodb://root:password123@localhost:27017";
+const url = process.env.MONGODB_HOST || "";
 const db = "lastwin";
 const collectionNames = ["users", "stats", "last"];
 
