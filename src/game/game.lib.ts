@@ -3,7 +3,7 @@ import { getWsById } from "~/config/websocket/websocket";
 import { enhanceUser } from "~/users/users.helper";
 import { addGameToUser } from "~/users/users.lib";
 import { getConnection } from "../config/mongodb";
-import { Game, GameInput } from "./game.type";
+import { Game, GameInput, UserInGame } from "./game.type";
 
 export async function createGame(gameInput: GameInput): Promise<string> {
   const { connection, client } = await getConnection("game");
@@ -38,7 +38,7 @@ export async function launchGame(idGame: string, idUser: string) {
   await connection.updateOne({ _id }, { $set: { startedAt, endedAt } });
   const socketsOfGame = getWsById(game.users?.map(({ idUser }) => idUser.toString()) || []);
   socketsOfGame.forEach((s) =>
-    s.send(JSON.stringify({ message: "gameStarted", content: { idGame: game._id.toString() } }))
+    s.send(JSON.stringify({ type: "gameStarted", content: { idGame: game._id.toString(), startedAt, endedAt } }))
   );
   client.close();
 }
@@ -72,7 +72,7 @@ export async function getGameByHashtag(hashtag: string): Promise<Game> {
   return game;
 }
 
-export async function joinGame(idGame: string, idUser: string) {
+export async function joinGame(idGame: string, idUser: string): Promise<UserInGame> {
   const game = await getGameById(idGame);
   if (!game) throw new Error("Game does not exist");
   if (game.startedAt) throw new Error("Cannot join a game that already started");
@@ -88,4 +88,5 @@ export async function joinGame(idGame: string, idUser: string) {
   );
   await addGameToUser(idGame, idUser);
   client.close();
+  return { idUser, ready: false, credit: game.credits, score: 0 };
 }

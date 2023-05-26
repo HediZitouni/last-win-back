@@ -60,7 +60,7 @@ app.patch("/back/user-ready", async (req, res) => {
       console.log(`one of ${idUsers} dont get userReady`);
     }
     socketsOfGame.forEach((s) =>
-      s.send(JSON.stringify({ type: "userReady", content: { idGame, idUser, ready: true } }))
+      s.send(JSON.stringify({ type: "userReady", content: { idGame, userInGame: { idUser, ready: true } } }))
     );
     res.send("User ready");
   } catch (e) {
@@ -80,10 +80,14 @@ app.put("/back/last", async (req, res) => {
     if (last.idUser !== idUser) {
       await setUserScore(idGame, last, newDateLast);
       await decreaseUserCredit(idGame, idUser);
-      await updateLast(idGame, idUser, newDateLast);
+      const game = await updateLast(idGame, idUser, newDateLast);
       const idUsers = users ? users.map((user) => user.idUser) : [];
       const socketsOfGame = getWsById(idUsers, "lastChanged");
-      socketsOfGame.forEach((s) => s.send(JSON.stringify({ message: "lastChanged" })));
+      socketsOfGame.forEach((s) =>
+        s.send(
+          JSON.stringify({ type: "lastChanged", content: { idGame, idUser, date: newDateLast, users: game.users } })
+        )
+      );
     }
     res.send("Update done!");
   } catch (e) {
@@ -164,7 +168,7 @@ app.get("/back/id-game", async (req, res) => {
 app.patch("/back/join-game", async (req, res) => {
   try {
     const { idGame, idUser } = req.body;
-    await joinGame(idGame, idUser);
+    const userInGame = await joinGame(idGame, idUser);
     const game = await getGameById(idGame);
     if (!game) res.status(204).send();
     const idUsers = game.users ? game.users.map((user) => user.idUser) : [];
@@ -174,9 +178,7 @@ app.patch("/back/join-game", async (req, res) => {
     } else {
       console.log(`one of ${idUsers} dont get userReady2`);
     }
-    socketsOfGame.forEach((s) =>
-      s.send(JSON.stringify({ type: "userReady", content: { idGame, idUser, ready: false } }))
-    );
+    socketsOfGame.forEach((s) => s.send(JSON.stringify({ type: "userReady", content: { idGame, userInGame } })));
     res.send({});
   } catch (e: any) {
     console.log(e);
