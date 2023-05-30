@@ -5,7 +5,7 @@ export function enhanceUser(game: Game) {
   const indexUser = game.users.findIndex(({ idUser }) => idUser === game.last.idUser);
   if (indexUser !== -1) {
     const dateNow = Math.round(Date.now() / 1000);
-    game.users[indexUser].score += Math.min(dateNow, game.endedAt) - game.last.date;
+    game.users[indexUser].score += Math.min(dateNow, game.endedAt || Infinity) - game.last.date;
   }
 }
 

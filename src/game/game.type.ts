@@ -11,6 +11,7 @@ export interface Game extends WithId<Document> {
   idOwner: string;
   users?: UserInGame[];
   startedAt?: number;
+  endedAt?: number;
   last: Last;
 }
 

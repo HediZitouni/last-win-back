@@ -4,13 +4,19 @@ import { enhanceUser } from "~/users/users.helper";
 import { addGameToUser } from "~/users/users.lib";
 import { getConnection } from "../config/mongodb";
 import { Game, GameInput, UserInGame } from "./game.type";
+import { generateGameTag } from "./game.helper";
+import { increaseGamesStats } from "~/stats/stats.lib";
 
 export async function createGame(gameInput: GameInput): Promise<string> {
   const { connection, client } = await getConnection("game");
   const { idOwner } = gameInput;
+  if (!gameInput.name) {
+    const nbGames = await increaseGamesStats();
+    gameInput.name = `Game_${nbGames}`;
+  }
   const { insertedId } = await connection.insertOne({
     ...gameInput,
-    hashtag: `${Math.round(Date.now() / 1000)}`,
+    hashtag: generateGameTag(5),
     users: [{ idUser: new ObjectId(idOwner), ready: true, credit: gameInput.credits, score: 0 }],
     last: { idUser: null, date: null },
   });

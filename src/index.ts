@@ -73,7 +73,8 @@ app.put("/back/last", async (req, res) => {
   try {
     const { idGame, idUser } = req.body;
     const newDateLast = Math.round(Date.now() / 1000);
-    const { last, users } = await getGameById(idGame);
+    const { last, users, endedAt } = await getGameById(idGame);
+    if (endedAt && newDateLast > endedAt) return res.send("Game is finished");
     const user = getUserInUsers(idUser, users);
     if (user.credit < 1) return res.send("User has no credit");
 
@@ -123,6 +124,15 @@ app.post("/back/games", async (req, res) => {
   try {
     const gameInput: GameInput = req.body;
     const idGame = await createGame(gameInput);
+    const game = await getGameById(idGame);
+    const socketsOfGame = getWsById([req.body.idOwner]);
+    if (socketsOfGame.length === 1) {
+      console.log(`send to ${req.body.idOwner} userReady2`);
+    } else {
+      console.log(`one of ${req.body.idOwner} dont get userReady2`);
+    }
+    socketsOfGame.forEach((s) => s.send(JSON.stringify({ type: "addGameToUser", content: { game } })));
+
     res.send({ idGame });
   } catch (e) {
     console.log(e);
@@ -179,6 +189,8 @@ app.patch("/back/join-game", async (req, res) => {
       console.log(`one of ${idUsers} dont get userReady2`);
     }
     socketsOfGame.forEach((s) => s.send(JSON.stringify({ type: "userReady", content: { idGame, userInGame } })));
+    socketsOfGame.forEach((s) => s.send(JSON.stringify({ type: "addGameToUser", content: { game } })));
+
     res.send({});
   } catch (e: any) {
     console.log(e);
