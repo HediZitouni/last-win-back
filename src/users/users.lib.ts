@@ -85,8 +85,14 @@ export async function getUserByIdGame(idGame: string): Promise<User[]> {
   return toUserArray(users);
 }
 
-export async function addGameToUser(idGame: string, idUser: string) {
+export async function addGameToUser(idGame: string, idUser: string): Promise<string> {
   const { connection, client } = await getConnection("users");
-  await connection.updateOne({ _id: new ObjectId(idUser) }, { $push: { games: new ObjectId(idGame) } });
+  const { value: user } = await connection.findOneAndUpdate(
+    { _id: new ObjectId(idUser) },
+    { $push: { games: new ObjectId(idGame) } } as any,
+    { projection: { name: 1, _id: 0 } }
+  );
   client.close();
+  if (!user) throw new Error("Pseudo not found");
+  return user.name;
 }

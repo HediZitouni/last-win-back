@@ -8,7 +8,7 @@ import { logCalls } from "./middlewares/log-calls.middleware";
 import { initDatabase } from "./config/mongodb";
 import { decreaseUserCredit } from "./credit/credit.lib";
 import { getUserInUsers } from "./users/users.helper";
-import { GameInput } from "./game/game.type";
+import { Game, GameInput } from "./game/game.type";
 import { createGame, getGameById, getGameByHashtag, joinGame, launchGame, setUserReady } from "./game/game.lib";
 import { getWsById, setupWebSocket } from "./config/websocket/websocket";
 
@@ -110,9 +110,15 @@ app.post("/back/users", async (req, res) => {
 
 app.put("/back/users", async (req, res) => {
   try {
-    const { id, name } = req.body;
+    const { id, name, idGame } = req.body;
     await setUserName(id, name);
     const user = await getUserById(id);
+    const game = await getGameById(idGame);
+    const socketsOfGame = getWsById(game.users ? game.users.map((user) => user.idUser) : []);
+
+    socketsOfGame.forEach((s) =>
+      s.send(JSON.stringify({ type: "nameChanged", content: { idUser: id, idGame, name } }))
+    );
     res.send(user);
   } catch (e) {
     console.log(e);

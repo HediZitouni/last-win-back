@@ -35,3 +35,7 @@ export interface UserInGame {
   credit: number;
   score: number;
 }
+
+export interface UserInGameView extends UserInGame {
+  name: string;
+}

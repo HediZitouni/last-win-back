@@ -1,10 +1,10 @@
 import { ObjectId } from "mongodb";
 import { getWsById } from "~/config/websocket/websocket";
 import { enhanceUser } from "~/users/users.helper";
-import { addGameToUser } from "~/users/users.lib";
+import { addGameToUser, getUserById } from "~/users/users.lib";
 import { getConnection } from "../config/mongodb";
-import { Game, GameInput, UserInGame } from "./game.type";
-import { generateGameTag } from "./game.helper";
+import { Game, GameInput, UserInGame, UserInGameView } from "./game.type";
+import { addNameInUserAggregation, generateGameTag } from "./game.helper";
 import { increaseGamesStats } from "~/stats/stats.lib";
 
 export async function createGame(gameInput: GameInput): Promise<string> {
@@ -14,6 +14,7 @@ export async function createGame(gameInput: GameInput): Promise<string> {
     const nbGames = await increaseGamesStats();
     gameInput.name = `Game_${nbGames}`;
   }
+  const user = await getUserById(idOwner);
   const { insertedId } = await connection.insertOne({
     ...gameInput,
     hashtag: generateGameTag(5),
@@ -60,13 +61,35 @@ export async function setUserReady(idGame: string, idUser: string) {
 
 export async function getGameById(idGame: string): Promise<Game> {
   const { connection, client } = await getConnection("game");
-  const game = (await connection.findOne({ _id: new ObjectId(idGame) })) as Game;
+  // const game = (await connection.findOne({ _id: new ObjectId(idGame) })) as Game;
+
+  // get game and add user name in each user of the property users.
+  // Table users do not have ready credit and score in it
+  const game = (
+    await connection
+      .aggregate([
+        { $match: { _id: new ObjectId(idGame) } },
+        {
+          $lookup: {
+            from: "users",
+            localField: "users.idUser",
+            foreignField: "_id",
+            as: "usersData",
+          },
+        },
+        addNameInUserAggregation,
+        { $unset: "usersData" }, // Remove the intermediate usersData field
+      ])
+      .toArray()
+  )[0] as Game;
+
   client.close();
   if (game) {
     game.id = game._id.toString();
     game.users?.forEach((user) => (user.idUser = user.idUser.toString()));
   }
   await enhanceUser(game);
+
   return game;
 }
 
@@ -78,7 +101,7 @@ export async function getGameByHashtag(hashtag: string): Promise<Game> {
   return game;
 }
 
-export async function joinGame(idGame: string, idUser: string): Promise<UserInGame> {
+export async function joinGame(idGame: string, idUser: string): Promise<UserInGameView> {
   const game = await getGameById(idGame);
   if (!game) throw new Error("Game does not exist");
   if (game.startedAt) throw new Error("Cannot join a game that already started");
@@ -92,7 +115,7 @@ export async function joinGame(idGame: string, idUser: string): Promise<UserInGa
     { _id: new ObjectId(idGame) },
     { $push: { users: { idUser: new ObjectId(idUser), ready: false, credit: game.credits, score: 0 } } }
   );
-  await addGameToUser(idGame, idUser);
+  const name = await addGameToUser(idGame, idUser);
   client.close();
-  return { idUser, ready: false, credit: game.credits, score: 0 };
+  return { idUser, ready: false, credit: game.credits, score: 0, name };
 }
