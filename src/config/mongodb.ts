@@ -4,7 +4,7 @@ const db = "lastwin2";
 const collectionNames = ["users", "stats", "last"];
 
 export async function initDatabase() {
-  console.log(url);
+  console.log("url:", url);
   const client = new MongoClient(url);
   console.log("Creating client...");
   await client.connect();

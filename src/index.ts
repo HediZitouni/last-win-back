@@ -12,6 +12,7 @@ import { GameInput } from "./game/game.type";
 import { createGame, getGameById, getGameByHashtag, joinGame, launchGame, setUserReady } from "./game/game.lib";
 import { getWsById, setupWebSocket } from "./config/websocket/websocket";
 
+console.log("process.env.MONGODB_HOST", process.env.MONGODB_HOST);
 const app = express();
 const server = http.createServer(app);
 setupWebSocket(server);
