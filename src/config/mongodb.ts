@@ -4,23 +4,26 @@ const db = "lastwin2";
 const collectionNames = ["users", "stats", "last"];
 
 export async function initDatabase() {
-  console.log("url:", url);
-  const client = new MongoClient(url);
-  console.log("Creating client...");
-  await client.connect();
+  try {
+    if (!url) {
+      throw new Error("MongoDB URL is not defined in environment variables.");
+    }
+    console.log(`Initializing database connection on ${url}...`);
+    const client = new MongoClient(url);
+    console.log("Connecting to MongoDB...");
+    await client.connect();
+    console.log("Connected to MongoDB.");
+    console.log("Checking for existing collections...");
+    const collections = (await client.db(db).listCollections().toArray()).map((col) => col.name);
 
-  console.log("Connected to MongoDB server");
-  const collections = (await client.db(db).listCollections().toArray()).map((col) => col.name);
-  console.log("Collections in database:", collections);
-  const collectionsToCreate = collectionNames
-    .filter((col) => !collections.includes(col))
-    .map((col) => client.db(db).createCollection(col));
-  await Promise.all(collectionsToCreate);
-  console.log(
-    "Collections created:",
-    collectionNames.filter((col) => !collections.includes(col))
-  );
-  client.close();
+    const collectionsToCreate = collectionNames
+      .filter((col) => !collections.includes(col))
+      .map((col) => client.db(db).createCollection(col));
+    await Promise.all(collectionsToCreate);
+    client.close();
+  } catch (error) {
+    console.error("Error initializing database:", error);
+  }
 }
 
 export async function getConnection(collectionName: string) {
