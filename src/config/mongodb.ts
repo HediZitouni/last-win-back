@@ -15,12 +15,17 @@ export async function initDatabase() {
     console.log("Connected to MongoDB.");
     console.log("Checking for existing collections...");
     const collections = (await client.db(db).listCollections().toArray()).map((col) => col.name);
-
+    console.log("Existing collections:", collections);
     const collectionsToCreate = collectionNames
       .filter((col) => !collections.includes(col))
       .map((col) => client.db(db).createCollection(col));
+    if (collectionsToCreate.length > 0) {
+      console.log("Creating missing collections:", collectionsToCreate);
+    }
     await Promise.all(collectionsToCreate);
+    console.log("All collections are ready.");
     client.close();
+    console.log("MongoDB connection closed.");
   } catch (error) {
     console.error("Error initializing database:", error);
   }
