@@ -27,11 +27,16 @@ export async function getOrCreateUser(deviceId: string): Promise<User> {
   const { connection, client } = await getConnection("users");
   const [user] = (await connection.find({ deviceId }).toArray()) as UserMongodb[];
 
+  console.log(`user`, user);
   if (!user) {
     const stats = await getOrCreateStats();
+    console.log(`stats`, stats);
     const userName = generateUserName(stats);
+    console.log(`userName`, userName);
     await connection.insertOne({ deviceId, name: userName, games: [] });
+    console.log(`user created`);
     const [createdUser] = (await connection.find({ deviceId }).toArray()) as UserMongodb[];
+    console.log(`createdUser`, createdUser);
     return toUser(createdUser);
   }
   client.close();
