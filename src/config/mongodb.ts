@@ -8,7 +8,7 @@ export async function initDatabase() {
     if (!url) {
       throw new Error("MongoDB URL is not defined in environment variables.");
     }
-    console.log(`Initializing database connection on ${url}...`);
+    console.log(`Initializing database ${db} connection on ${url}...`);
     const client = new MongoClient(url);
     console.log("Connecting to MongoDB...");
     await client.connect();
