@@ -95,8 +95,8 @@ app.put("/last", async (req, res) => {
 
 app.post("/users", async (req, res) => {
   try {
+    console.log(`Route well called`);
     const { deviceId } = req.body;
-    console.log(`deviceId`, deviceId);
     const user = await getOrCreateUser(deviceId);
     res.send(user);
   } catch (e) {
