@@ -22,11 +22,11 @@ app.use(cors());
 app.use(express.json());
 app.use(logCalls);
 
-app.get("/back", async (req, res) => {
+app.get("/", async (req, res) => {
   res.send("Hello world!");
 });
 
-app.get("/back/user", async (req, res) => {
+app.get("/user", async (req, res) => {
   try {
     const { idUser } = req.query as { idUser: string };
     const user = await getUserById(idUser);
@@ -37,7 +37,7 @@ app.get("/back/user", async (req, res) => {
   }
 });
 
-app.get("/back/users", async (req, res) => {
+app.get("/users", async (req, res) => {
   try {
     const { idGame } = req.query as { idGame: string };
     const user = await getUserByIdGame(idGame);
@@ -48,7 +48,7 @@ app.get("/back/users", async (req, res) => {
   }
 });
 
-app.patch("/back/user-ready", async (req, res) => {
+app.patch("/user-ready", async (req, res) => {
   try {
     const { idGame, idUser } = req.body;
     await setUserReady(idGame, idUser);
@@ -70,7 +70,7 @@ app.patch("/back/user-ready", async (req, res) => {
   }
 });
 
-app.put("/back/last", async (req, res) => {
+app.put("/last", async (req, res) => {
   try {
     const { idGame, idUser } = req.body;
     const newDateLast = Math.round(Date.now() / 1000);
@@ -93,7 +93,7 @@ app.put("/back/last", async (req, res) => {
   }
 });
 
-app.post("/back/users", async (req, res) => {
+app.post("/users", async (req, res) => {
   try {
     const { deviceId } = req.body;
     console.log(`deviceId`, deviceId);
@@ -105,7 +105,7 @@ app.post("/back/users", async (req, res) => {
   }
 });
 
-app.put("/back/users", async (req, res) => {
+app.put("/users", async (req, res) => {
   try {
     const { id, name } = req.body;
     await setUserName(id, name);
@@ -117,7 +117,7 @@ app.put("/back/users", async (req, res) => {
   }
 });
 
-app.post("/back/games", async (req, res) => {
+app.post("/games", async (req, res) => {
   try {
     const gameInput: GameInput = req.body;
     const idGame = await createGame(gameInput);
@@ -128,7 +128,7 @@ app.post("/back/games", async (req, res) => {
   }
 });
 
-app.patch("/back/games", async (req, res) => {
+app.patch("/games", async (req, res) => {
   try {
     const { idGame, idUser } = req.body;
     await launchGame(idGame, idUser);
@@ -139,7 +139,7 @@ app.patch("/back/games", async (req, res) => {
   }
 });
 
-app.get("/back/game", async (req, res) => {
+app.get("/game", async (req, res) => {
   try {
     const id = req.query.id as string;
     const game = await getGameById(id);
@@ -150,7 +150,7 @@ app.get("/back/game", async (req, res) => {
   }
 });
 
-app.get("/back/id-game", async (req, res) => {
+app.get("/id-game", async (req, res) => {
   try {
     const { hashtag, idUser } = req.query as { hashtag: string; idUser: string };
     const game = await getGameByHashtag(hashtag);
@@ -163,7 +163,7 @@ app.get("/back/id-game", async (req, res) => {
   }
 });
 
-app.patch("/back/join-game", async (req, res) => {
+app.patch("/join-game", async (req, res) => {
   try {
     const { idGame, idUser } = req.body;
     await joinGame(idGame, idUser);
