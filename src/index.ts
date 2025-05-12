@@ -96,6 +96,7 @@ app.put("/back/last", async (req, res) => {
 app.post("/back/users", async (req, res) => {
   try {
     const { deviceId } = req.body;
+    console.log(`deviceId`, deviceId);
     const user = await getOrCreateUser(deviceId);
     res.send(user);
   } catch (e) {

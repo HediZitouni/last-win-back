@@ -24,6 +24,7 @@ export async function setUserScore(idGame: string, last: Last, newDateLast: numb
 }
 
 export async function getOrCreateUser(deviceId: string): Promise<User> {
+  console.log("start getConnecion");
   const { connection, client } = await getConnection("users");
   const [user] = (await connection.find({ deviceId }).toArray()) as UserMongodb[];
 
