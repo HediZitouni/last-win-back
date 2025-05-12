@@ -1,6 +1,6 @@
 import { MongoClient } from "mongodb";
 const url = process.env.MONGODB_HOST || "";
-const db = "lastwin2";
+const db = "lastwin";
 const collectionNames = ["users", "stats", "last"];
 
 export async function initDatabase() {
