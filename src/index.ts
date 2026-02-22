@@ -13,15 +13,17 @@ import { enhanceUser, enhanceUsers } from './users/users.helper';
 const app = express();
 const port = process.env.PORT || 3000;
 
-app.use(cors());
+app.use(cors({
+	origin: process.env.CORS_ORIGIN || 'https://otrom.fr',
+}));
 app.use(express.json());
 app.use(logCalls);
 
-app.get('/back', async (req, res) => {
+app.get('/lastwin/api', async (req, res) => {
 	res.send('Hello world!');
 });
 
-app.get('/back/user', async (req, res) => {
+app.get('/lastwin/api/user', async (req, res) => {
 	try {
 		const id = req.query.id as string;
 		const user = await getUserById(id);
@@ -34,7 +36,7 @@ app.get('/back/user', async (req, res) => {
 	}
 });
 
-app.get('/back/users', async (req, res) => {
+app.get('/lastwin/api/users', async (req, res) => {
 	try {
 		const users = await getUsers();
 		const last = await getLast();
@@ -47,7 +49,7 @@ app.get('/back/users', async (req, res) => {
 	}
 });
 
-app.put('/back/last', async (req, res) => {
+app.put('/lastwin/api/last', async (req, res) => {
 	try {
 		const { id } = req.body;
 		const newDateLast = Math.round(Date.now() / 1000);
@@ -67,7 +69,7 @@ app.put('/back/last', async (req, res) => {
 	}
 });
 
-app.post('/back/users', async (req, res) => {
+app.post('/lastwin/api/users', async (req, res) => {
 	try {
 		const { deviceId } = req.body;
 		const user = await getOrCreateUser(deviceId);
@@ -78,7 +80,7 @@ app.post('/back/users', async (req, res) => {
 	}
 });
 
-app.put('/back/users', async (req, res) => {
+app.put('/lastwin/api/users', async (req, res) => {
 	try {
 		const { id, name } = req.body;
 		await setUserName(id, name);
