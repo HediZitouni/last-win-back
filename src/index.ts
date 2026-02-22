@@ -1,5 +1,7 @@
 import 'dotenv/config';
 import express from 'express';
+import { createServer } from 'http';
+import { Server } from 'socket.io';
 import { getOrCreateUser } from './users/users.lib';
 import cors from 'cors';
 import { getLast, getOrCreateLast, updateLast } from './last/last.lib';
@@ -13,10 +15,22 @@ import {
 } from './games/games.lib';
 
 const app = express();
+const httpServer = createServer(app);
+const corsOrigin = process.env.CORS_ORIGIN || 'https://otrom.fr';
 const port = process.env.PORT || 3000;
 
+const io = new Server(httpServer, {
+	cors: { origin: corsOrigin },
+});
+
+io.on('connection', (socket) => {
+	socket.on('join-game', (gameId: string) => {
+		socket.join(gameId);
+	});
+});
+
 app.use(cors({
-	origin: process.env.CORS_ORIGIN || 'https://otrom.fr',
+	origin: corsOrigin,
 }));
 app.use(express.json());
 app.use(logCalls);
@@ -171,6 +185,14 @@ app.put('/lastwin/api/last', async (req, res) => {
 			await decreasePlayerCredit(gameId, userId);
 			await updateLast(gameId, userId, newDateLast);
 		}
+
+		const updatedGame = await getGameById(gameId);
+		if (updatedGame) {
+			const updatedLast = await getLast(gameId);
+			const enhancedPlayers = enhancePlayersWithLast(updatedGame.players, updatedLast);
+			io.to(gameId).emit('last-updated', enhancedPlayers);
+		}
+
 		res.send('Update done!');
 	} catch (e) {
 		console.log(e);
@@ -191,7 +213,7 @@ app.post('/lastwin/api/users', async (req, res) => {
 	}
 });
 
-app.listen(port, async () => {
+httpServer.listen(port, async () => {
 	console.log(`Example app listening on port ${port}`);
 	await initDatabase();
 	await initRestatCreditJob();
