@@ -26,9 +26,13 @@ app.get('/lastwin/api', async (req, res) => {
 app.get('/lastwin/api/user', async (req, res) => {
 	try {
 		const id = req.query.id as string;
+		if (!id || id === 'undefined') return res.status(400).send('Missing user id');
 		const user = await getUserById(id);
+		if (!user) return res.status(404).send('User not found');
 		const last = await getLast();
-		enhanceUser(user, last);
+		if (last) {
+			enhanceUser(user, last);
+		}
 		res.send(user);
 	} catch (e) {
 		console.log(e);
@@ -54,6 +58,7 @@ app.put('/lastwin/api/last', async (req, res) => {
 		const { id } = req.body;
 		const newDateLast = Math.round(Date.now() / 1000);
 		const user = await getUserById(id);
+		if (!user) return res.status(404).send('User not found');
 		if (user.credit < 1) return res.send('User has no credit');
 
 		const last = await getOrCreateLast(id);

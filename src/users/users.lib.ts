@@ -42,11 +42,11 @@ export async function setUserName(id: string, name: string) {
 	client.close();
 }
 
-export async function getUserById(id: string): Promise<User> {
+export async function getUserById(id: string): Promise<User | null> {
 	const { connection, client } = await getConnection('users');
-	const user = (await connection.findOne({ _id: new ObjectId(id) })) as UserMongodb;
+	const user = (await connection.findOne({ _id: new ObjectId(id) })) as UserMongodb | null;
 	client.close();
-	return toUser(user);
+	return user ? toUser(user) : null;
 }
 
 function generateUserName(stats: Stats): string {
