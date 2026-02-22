@@ -2,22 +2,31 @@ import { Document, ObjectId, WithId } from 'mongodb';
 
 export type GameStatus = 'waiting' | 'started';
 
+export interface Player {
+	userId: string;
+	name: string;
+	score: number;
+	credit: number;
+}
+
 export interface GameMongodb extends WithId<Document> {
 	_id: ObjectId;
 	name: string;
+	code: string;
 	createdBy: string;
 	createdAt: number;
 	status: GameStatus;
-	players: string[];
+	players: Player[];
 }
 
 export interface Game {
 	id: string;
 	name: string;
+	code: string;
 	createdBy: string;
 	createdAt: number;
 	status: GameStatus;
-	players: string[];
+	players: Player[];
 }
 
 export function toGame(gameMongodb: GameMongodb): Game {

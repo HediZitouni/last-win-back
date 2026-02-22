@@ -1,15 +1,16 @@
 import 'dotenv/config';
 import express from 'express';
-import { getUsers, getUsersByIds, setUserScore, getOrCreateUser, setUserName, getUserById } from './users/users.lib';
+import { getOrCreateUser } from './users/users.lib';
 import cors from 'cors';
 import { getLast, getOrCreateLast, updateLast } from './last/last.lib';
 import { logCalls } from './middlewares/log-calls.middleware';
 import { initDatabase } from './config/mongodb';
 import { initRestatCreditJob } from './credit/credit.job';
-import { decreaseUserCredit } from './credit/credit.lib';
-import { toUserSafeArray } from './users/users.type';
-import { enhanceUser, enhanceUsers } from './users/users.helper';
-import { getGames, createGame, getGameById, joinGame, startGame } from './games/games.lib';
+import {
+	getGamesByPlayer, createGame, getGameById, joinGameByCode,
+	rejoinGame, startGame, updatePlayerName, getPlayerFromGame,
+	enhancePlayersWithLast, addPlayerScore, decreasePlayerCredit,
+} from './games/games.lib';
 
 const app = express();
 const port = process.env.PORT || 3000;
@@ -28,7 +29,9 @@ app.get('/lastwin/api', async (req, res) => {
 
 app.get('/lastwin/api/games', async (req, res) => {
 	try {
-		const games = await getGames();
+		const userId = req.query.userId as string;
+		if (!userId) return res.status(400).send('Missing userId');
+		const games = await getGamesByPlayer(userId);
 		res.send(games);
 	} catch (e) {
 		console.log(e);
@@ -60,12 +63,26 @@ app.post('/lastwin/api/games', async (req, res) => {
 	}
 });
 
-app.put('/lastwin/api/games/:id/join', async (req, res) => {
+app.put('/lastwin/api/games/join', async (req, res) => {
+	try {
+		const { code, userId } = req.body;
+		if (!userId) return res.status(400).send('Missing userId');
+		if (!code) return res.status(400).send('Missing code');
+		const game = await joinGameByCode(code, userId);
+		if (!game) return res.status(400).send('Code invalide ou partie déjà lancée');
+		res.send(game);
+	} catch (e) {
+		console.log(e);
+		res.send(e);
+	}
+});
+
+app.put('/lastwin/api/games/:id/rejoin', async (req, res) => {
 	try {
 		const { userId } = req.body;
 		if (!userId) return res.status(400).send('Missing userId');
-		const game = await joinGame(req.params.id, userId);
-		if (!game) return res.status(400).send('Cannot join: game not found or not a player of this game');
+		const game = await rejoinGame(req.params.id, userId);
+		if (!game) return res.status(400).send('Partie introuvable ou vous n\'en faites pas partie');
 		res.send(game);
 	} catch (e) {
 		console.log(e);
@@ -86,67 +103,73 @@ app.put('/lastwin/api/games/:id/start', async (req, res) => {
 	}
 });
 
-// Users
-
-app.get('/lastwin/api/user', async (req, res) => {
+app.put('/lastwin/api/games/:id/player/name', async (req, res) => {
 	try {
-		const id = req.query.id as string;
-		const gameId = req.query.gameId as string;
-		if (!id || id === 'undefined') return res.status(400).send('Missing user id');
-		const user = await getUserById(id);
-		if (!user) return res.status(404).send('User not found');
-		if (gameId) {
-			const last = await getLast(gameId);
-			if (last) {
-				enhanceUser(user, last);
-			}
-		}
-		res.send(user);
+		const { userId, name } = req.body;
+		if (!userId) return res.status(400).send('Missing userId');
+		if (!name) return res.status(400).send('Missing name');
+		const game = await updatePlayerName(req.params.id, userId, name);
+		if (!game) return res.status(404).send('Game not found');
+		res.send(game);
 	} catch (e) {
 		console.log(e);
 		res.send(e);
 	}
 });
 
-app.get('/lastwin/api/users', async (req, res) => {
+// Players (game-scoped)
+
+app.get('/lastwin/api/games/:id/players', async (req, res) => {
 	try {
-		const gameId = req.query.gameId as string;
-		let users;
-		if (gameId) {
-			const game = await getGameById(gameId);
-			if (!game) return res.status(404).send('Game not found');
-			users = await getUsersByIds(game.players || []);
-			const last = await getLast(gameId);
-			if (last) {
-				enhanceUsers(users, last);
-			}
-		} else {
-			users = await getUsers();
-		}
-		res.send(toUserSafeArray(users));
+		const game = await getGameById(req.params.id);
+		if (!game) return res.status(404).send('Game not found');
+		const last = await getLast(game.id);
+		const players = enhancePlayersWithLast(game.players, last);
+		res.send(players);
 	} catch (e) {
+		console.log(e);
 		res.send(e);
 	}
 });
 
+app.get('/lastwin/api/games/:id/player', async (req, res) => {
+	try {
+		const userId = req.query.userId as string;
+		if (!userId) return res.status(400).send('Missing userId');
+		const game = await getGameById(req.params.id);
+		if (!game) return res.status(404).send('Game not found');
+		const last = await getLast(game.id);
+		const players = enhancePlayersWithLast(game.players, last);
+		const player = players.find((p) => p.userId === userId);
+		if (!player) return res.status(404).send('Player not found in game');
+		res.send(player);
+	} catch (e) {
+		console.log(e);
+		res.send(e);
+	}
+});
+
+// Last
+
 app.put('/lastwin/api/last', async (req, res) => {
 	try {
-		const { id, gameId } = req.body;
+		const { userId, gameId } = req.body;
 		if (!gameId) return res.status(400).send('Missing gameId');
+		if (!userId) return res.status(400).send('Missing userId');
 		const game = await getGameById(gameId);
 		if (!game) return res.status(404).send('Game not found');
 		if (game.status !== 'started') return res.status(400).send('Game not started');
-		if (!game.players.includes(id)) return res.status(403).send('Not a player of this game');
-		const newDateLast = Math.round(Date.now() / 1000);
-		const user = await getUserById(id);
-		if (!user) return res.status(404).send('User not found');
-		if (user.credit < 1) return res.send('User has no credit');
+		const player = getPlayerFromGame(game, userId);
+		if (!player) return res.status(403).send('Not a player of this game');
+		if (player.credit < 1) return res.status(400).send('No credit left');
 
-		const last = await getOrCreateLast(gameId, id);
-		if (last.idLastUser !== id) {
-			await setUserScore(last, newDateLast);
-			await decreaseUserCredit(id);
-			await updateLast(gameId, id, newDateLast);
+		const newDateLast = Math.round(Date.now() / 1000);
+		const last = await getOrCreateLast(gameId, userId);
+		if (last.idLastUser !== userId) {
+			const scoreToAdd = newDateLast - last.date;
+			await addPlayerScore(gameId, last.idLastUser, scoreToAdd);
+			await decreasePlayerCredit(gameId, userId);
+			await updateLast(gameId, userId, newDateLast);
 		}
 		res.send('Update done!');
 	} catch (e) {
@@ -155,22 +178,12 @@ app.put('/lastwin/api/last', async (req, res) => {
 	}
 });
 
+// Users (device registration only)
+
 app.post('/lastwin/api/users', async (req, res) => {
 	try {
 		const { deviceId } = req.body;
 		const user = await getOrCreateUser(deviceId);
-		res.send(user);
-	} catch (e) {
-		console.log(e);
-		res.send(e);
-	}
-});
-
-app.put('/lastwin/api/users', async (req, res) => {
-	try {
-		const { id, name } = req.body;
-		await setUserName(id, name);
-		const user = await getUserById(id);
 		res.send(user);
 	} catch (e) {
 		console.log(e);
