@@ -1,37 +1,34 @@
-import { ObjectId } from 'mongodb';
 import { getConnection } from '../config/mongodb';
 import { Last } from './last.type';
-const _id = new ObjectId('63190f12785c77a817e6ef5a');
 
-export async function getLast(): Promise<Last> {
+export async function getLast(gameId: string): Promise<Last> {
 	const { connection, client } = await getConnection('last');
-	const last = (await connection.findOne({ _id })) as Last;
+	const last = (await connection.findOne({ gameId })) as Last;
 	client.close();
 	return last;
 }
 
-export async function getOrCreateLast(idLastUser: string): Promise<Last> {
-	let last = await getLast();
+export async function getOrCreateLast(gameId: string, idLastUser: string): Promise<Last> {
+	let last = await getLast(gameId);
 	if (!last) {
-		await createLast(idLastUser);
-		last = await getLast();
+		await createLast(gameId, idLastUser);
+		last = await getLast(gameId);
 	}
 	return last;
 }
 
-export async function createLast(idLastUser: string) {
+export async function createLast(gameId: string, idLastUser: string) {
 	const { connection, client } = await getConnection('last');
 	await connection.insertOne({
-		_id,
+		gameId,
 		idLastUser,
 		date: Math.round(Date.now() / 1000),
 	});
-
 	client.close();
 }
 
-export async function updateLast(idLastUser: string, newDateLast: number) {
+export async function updateLast(gameId: string, idLastUser: string, newDateLast: number) {
 	const { connection, client } = await getConnection('last');
-	await connection.updateOne({ _id }, { $set: { idLastUser, date: newDateLast } });
+	await connection.updateOne({ gameId }, { $set: { idLastUser, date: newDateLast } });
 	client.close();
 }

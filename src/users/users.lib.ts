@@ -13,6 +13,15 @@ export async function getUsers(): Promise<User[]> {
 	return toUserArray(users);
 }
 
+export async function getUsersByIds(ids: string[]): Promise<User[]> {
+	if (ids.length === 0) return [];
+	const { connection, client } = await getConnection('users');
+	const objectIds = ids.map((id) => new ObjectId(id));
+	const users = (await connection.find({ _id: { $in: objectIds } }).toArray()) as UserMongodb[];
+	client.close();
+	return toUserArray(users);
+}
+
 export async function setUserScore(last: Last, newDateLast: number) {
 	const { connection, client } = await getConnection('users');
 	const { idLastUser, date } = last;

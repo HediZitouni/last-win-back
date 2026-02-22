@@ -1,6 +1,6 @@
 import { MongoClient } from 'mongodb';
 const url = 'mongodb://localhost:27017/lastwin';
-const collectionNames = ['users', 'stats', 'last'];
+const collectionNames = ['users', 'stats', 'last', 'games'];
 
 export async function initDatabase() {
 	const client = new MongoClient(url);
