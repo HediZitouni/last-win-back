@@ -85,6 +85,7 @@ app.put('/lastwin/api/games/join', async (req, res) => {
 		if (!code) return res.status(400).send('Missing code');
 		const game = await joinGameByCode(code, userId);
 		if (!game) return res.status(400).send('Code invalide ou partie déjà lancée');
+		io.to(game.id).emit('game-updated', game);
 		res.send(game);
 	} catch (e) {
 		console.log(e);
@@ -111,6 +112,7 @@ app.put('/lastwin/api/games/:id/start', async (req, res) => {
 		if (!userId) return res.status(400).send('Missing userId');
 		const game = await startGame(req.params.id, userId);
 		if (!game) return res.status(403).send('Cannot start: not the creator or game already started');
+		io.to(game.id).emit('game-updated', game);
 		res.send(game);
 	} catch (e) {
 		console.log(e);
@@ -125,6 +127,7 @@ app.put('/lastwin/api/games/:id/player/name', async (req, res) => {
 		if (!name) return res.status(400).send('Missing name');
 		const game = await updatePlayerName(req.params.id, userId, name);
 		if (!game) return res.status(404).send('Game not found');
+		io.to(game.id).emit('game-updated', game);
 		res.send(game);
 	} catch (e) {
 		console.log(e);
@@ -139,6 +142,7 @@ app.put('/lastwin/api/games/:id/settings', async (req, res) => {
 		if (!settings) return res.status(400).send('Missing settings');
 		const game = await updateGameSettings(req.params.id, userId, settings);
 		if (!game) return res.status(403).send('Cannot update: not the creator or game already started');
+		io.to(game.id).emit('game-updated', game);
 		res.send(game);
 	} catch (e) {
 		console.log(e);
