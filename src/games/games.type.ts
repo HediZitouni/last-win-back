@@ -5,7 +5,7 @@ export type GameStatus = 'waiting' | 'started';
 export interface GameSettings {
 	maxPlayers: number;
 	maxCredits: number;
-	timeLimitMinutes: number | null;
+	timeLimitSeconds: number | null;
 	showOtherCredits: boolean;
 	showOtherScores: boolean;
 	showOtherIsLast: boolean;

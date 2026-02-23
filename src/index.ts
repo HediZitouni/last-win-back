@@ -188,9 +188,9 @@ app.put('/lastwin/api/last', async (req, res) => {
 		const game = await getGameById(gameId);
 		if (!game) return res.status(404).send('Game not found');
 		if (game.status !== 'started') return res.status(400).send('Game not started');
-		if (game.settings.timeLimitMinutes && game.startedAt) {
+		if (game.settings.timeLimitSeconds && game.startedAt) {
 			const now = Math.round(Date.now() / 1000);
-			if (now - game.startedAt > game.settings.timeLimitMinutes * 60) {
+			if (now - game.startedAt > game.settings.timeLimitSeconds) {
 				return res.status(400).send('Partie terminée (temps écoulé)');
 			}
 		}

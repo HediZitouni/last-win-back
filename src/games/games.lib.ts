@@ -9,7 +9,7 @@ const CODE_LENGTH = 6;
 export const DEFAULT_SETTINGS: GameSettings = {
 	maxPlayers: 10,
 	maxCredits: 10,
-	timeLimitMinutes: null,
+	timeLimitSeconds: null,
 	showOtherCredits: true,
 	showOtherScores: true,
 	showOtherIsLast: true,
