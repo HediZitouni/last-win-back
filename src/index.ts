@@ -12,7 +12,7 @@ import {
 	getGamesByPlayer, createGame, getGameById, joinGameByCode,
 	rejoinGame, startGame, updatePlayerName, getPlayerFromGame,
 	enhancePlayersWithLast, addPlayerScore, decreasePlayerCredit,
-	updateGameSettings,
+	updateGameSettings, finalizeExpiredGame,
 } from './games/games.lib';
 
 const app = express();
@@ -154,10 +154,12 @@ app.put('/lastwin/api/games/:id/settings', async (req, res) => {
 
 app.get('/lastwin/api/games/:id/players', async (req, res) => {
 	try {
-		const game = await getGameById(req.params.id);
+		let game = await getGameById(req.params.id);
 		if (!game) return res.status(404).send('Game not found');
+		await finalizeExpiredGame(game);
+		game = (await getGameById(req.params.id))!;
 		const last = await getLast(game.id);
-		const players = enhancePlayersWithLast(game.players, last);
+		const players = enhancePlayersWithLast(game.players, last, game);
 		res.send(players);
 	} catch (e) {
 		console.log(e);
@@ -169,10 +171,12 @@ app.get('/lastwin/api/games/:id/player', async (req, res) => {
 	try {
 		const userId = req.query.userId as string;
 		if (!userId) return res.status(400).send('Missing userId');
-		const game = await getGameById(req.params.id);
+		let game = await getGameById(req.params.id);
 		if (!game) return res.status(404).send('Game not found');
+		await finalizeExpiredGame(game);
+		game = (await getGameById(req.params.id))!;
 		const last = await getLast(game.id);
-		const players = enhancePlayersWithLast(game.players, last);
+		const players = enhancePlayersWithLast(game.players, last, game);
 		const player = players.find((p) => p.userId === userId);
 		if (!player) return res.status(404).send('Player not found in game');
 		res.send(player);
@@ -214,7 +218,7 @@ app.put('/lastwin/api/last', async (req, res) => {
 		const updatedGame = await getGameById(gameId);
 		if (updatedGame) {
 			const updatedLast = await getLast(gameId);
-			const enhancedPlayers = enhancePlayersWithLast(updatedGame.players, updatedLast);
+			const enhancedPlayers = enhancePlayersWithLast(updatedGame.players, updatedLast, updatedGame);
 			io.to(gameId).emit('last-updated', enhancedPlayers);
 		}
 

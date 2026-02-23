@@ -185,13 +185,35 @@ export function getPlayerFromGame(game: Game, userId: string): Player | undefine
 	return game.players.find((p) => p.userId === userId);
 }
 
-export function enhancePlayersWithLast(players: Player[], last: Last | null): (Player & { isLast?: boolean })[] {
+export function enhancePlayersWithLast(players: Player[], last: Last | null, game?: Game): (Player & { isLast?: boolean })[] {
 	if (!last) return players;
-	const now = Math.round(Date.now() / 1000);
+	let now = Math.round(Date.now() / 1000);
+	if (game?.startedAt && game?.settings?.timeLimitSeconds) {
+		const endTime = game.startedAt + game.settings.timeLimitSeconds;
+		if (now > endTime) now = endTime;
+	}
 	return players.map((p) => {
 		if (p.userId === last.idLastUser) {
 			return { ...p, score: p.score + (now - last.date), isLast: true };
 		}
 		return p;
 	});
+}
+
+export async function finalizeExpiredGame(game: Game): Promise<void> {
+	if (!game.settings.timeLimitSeconds || !game.startedAt) return;
+	const endTime = game.startedAt + game.settings.timeLimitSeconds;
+	if (Math.round(Date.now() / 1000) < endTime) return;
+	const { connection, client } = await getConnection('last');
+	const result = await connection.findOneAndUpdate(
+		{ gameId: game.id, date: { $lt: endTime } },
+		{ $set: { date: endTime } },
+	);
+	client.close();
+	const last = result.value as Last | null;
+	if (!last) return;
+	const scoreToAdd = endTime - last.date;
+	if (scoreToAdd > 0) {
+		await addPlayerScore(game.id, last.idLastUser, scoreToAdd);
+	}
 }
