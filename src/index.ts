@@ -12,6 +12,7 @@ import {
 	getGamesByPlayer, createGame, getGameById, joinGameByCode,
 	rejoinGame, startGame, updatePlayerName, getPlayerFromGame,
 	enhancePlayersWithLast, addPlayerScore, decreasePlayerCredit,
+	updateGameSettings,
 } from './games/games.lib';
 
 const app = express();
@@ -131,6 +132,20 @@ app.put('/lastwin/api/games/:id/player/name', async (req, res) => {
 	}
 });
 
+app.put('/lastwin/api/games/:id/settings', async (req, res) => {
+	try {
+		const { userId, settings } = req.body;
+		if (!userId) return res.status(400).send('Missing userId');
+		if (!settings) return res.status(400).send('Missing settings');
+		const game = await updateGameSettings(req.params.id, userId, settings);
+		if (!game) return res.status(403).send('Cannot update: not the creator or game already started');
+		res.send(game);
+	} catch (e) {
+		console.log(e);
+		res.send(e);
+	}
+});
+
 // Players (game-scoped)
 
 app.get('/lastwin/api/games/:id/players', async (req, res) => {
@@ -173,6 +188,12 @@ app.put('/lastwin/api/last', async (req, res) => {
 		const game = await getGameById(gameId);
 		if (!game) return res.status(404).send('Game not found');
 		if (game.status !== 'started') return res.status(400).send('Game not started');
+		if (game.settings.timeLimitMinutes && game.startedAt) {
+			const now = Math.round(Date.now() / 1000);
+			if (now - game.startedAt > game.settings.timeLimitMinutes * 60) {
+				return res.status(400).send('Partie terminée (temps écoulé)');
+			}
+		}
 		const player = getPlayerFromGame(game, userId);
 		if (!player) return res.status(403).send('Not a player of this game');
 		if (player.credit < 1) return res.status(400).send('No credit left');
