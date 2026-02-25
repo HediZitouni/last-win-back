@@ -208,10 +208,13 @@ app.put('/lastwin/api/last', async (req, res) => {
 		if (player.credit < 1) return res.status(400).send('No credit left');
 
 		const newDateLast = Math.round(Date.now() / 1000);
-		const last = await getOrCreateLast(gameId, userId);
-		if (last.idLastUser !== userId) {
-			const scoreToAdd = newDateLast - last.date;
-			await addPlayerScore(gameId, last.idLastUser, scoreToAdd);
+		const existingLast = await getLast(gameId);
+		if (!existingLast) {
+			await getOrCreateLast(gameId, userId);
+			await decreasePlayerCredit(gameId, userId);
+		} else if (existingLast.idLastUser !== userId) {
+			const scoreToAdd = newDateLast - existingLast.date;
+			await addPlayerScore(gameId, existingLast.idLastUser, scoreToAdd);
 			await decreasePlayerCredit(gameId, userId);
 			await updateLast(gameId, userId, newDateLast);
 		}
