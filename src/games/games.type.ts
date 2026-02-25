@@ -46,7 +46,18 @@ export interface Game {
 
 export function toGame(gameMongodb: GameMongodb): Game {
 	const { _id, ...properties } = gameMongodb;
-	return { id: _id.toString(), ...properties } as Game;
+	return {
+		id: _id.toString(),
+		...properties,
+		settings: properties.settings ?? {
+			maxPlayers: 10,
+			maxCredits: 10,
+			timeLimitSeconds: null,
+			showOtherCredits: true,
+			showOtherScores: true,
+			showOtherIsLast: true,
+		},
+	} as Game;
 }
 
 export function toGameArray(gamesMongodb: GameMongodb[]): Game[] {

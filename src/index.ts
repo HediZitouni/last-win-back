@@ -22,6 +22,7 @@ const port = process.env.PORT || 3000;
 
 const io = new Server(httpServer, {
 	cors: { origin: corsOrigin },
+	path: '/lastwin/socket.io/',
 });
 
 io.on('connection', (socket) => {
