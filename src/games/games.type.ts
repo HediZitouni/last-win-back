@@ -29,6 +29,7 @@ export interface GameMongodb extends WithId<Document> {
 	settings: GameSettings;
 	configured: boolean;
 	startedAt: number | null;
+	restartedFromGameId?: string;
 }
 
 export interface Game {
@@ -42,6 +43,7 @@ export interface Game {
 	settings: GameSettings;
 	configured: boolean;
 	startedAt: number | null;
+	restartedFromGameId?: string;
 }
 
 export function toGame(gameMongodb: GameMongodb): Game {

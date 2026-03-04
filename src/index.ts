@@ -9,7 +9,7 @@ import { logCalls } from './middlewares/log-calls.middleware';
 import { initDatabase } from './config/mongodb';
 import { initRestatCreditJob } from './credit/credit.job';
 import {
-	getGamesByPlayer, createGame, getGameById, joinGameByCode,
+	getGamesByPlayer, createGame, createGameFromPrevious, getGameById, joinGameByCode,
 	rejoinGame, startGame, updatePlayerName, getPlayerFromGame,
 	enhancePlayersWithLast, addPlayerScore, decreasePlayerCredit,
 	updateGameSettings, finalizeExpiredGame,
@@ -94,6 +94,19 @@ app.put('/lastwin/api/games/join', async (req, res) => {
 	}
 });
 
+app.post('/lastwin/api/games/:id/restart', async (req, res) => {
+	try {
+		const { userId } = req.body;
+		if (!userId) return res.status(400).send('Missing userId');
+		const game = await createGameFromPrevious(req.params.id, userId);
+		if (!game) return res.status(403).send('Cannot restart: not the creator or game not found');
+		res.send(game);
+	} catch (e) {
+		console.log(e);
+		res.send(e);
+	}
+});
+
 app.put('/lastwin/api/games/:id/rejoin', async (req, res) => {
 	try {
 		const { userId } = req.body;
@@ -144,6 +157,9 @@ app.put('/lastwin/api/games/:id/settings', async (req, res) => {
 		const game = await updateGameSettings(req.params.id, userId, settings);
 		if (!game) return res.status(403).send('Cannot update: not the creator or game already started');
 		io.to(game.id).emit('game-updated', game);
+		if (game.restartedFromGameId) {
+			io.to(game.restartedFromGameId).emit('game-restarted', game);
+		}
 		res.send(game);
 	} catch (e) {
 		console.log(e);

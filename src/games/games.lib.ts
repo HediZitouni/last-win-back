@@ -23,6 +23,14 @@ function generateCode(): string {
 	return code;
 }
 
+async function generateUniqueCode(connection: { findOne: (q: { code: string }) => Promise<unknown> }): Promise<string> {
+	let code: string;
+	do {
+		code = generateCode();
+	} while (await connection.findOne({ code: code.toUpperCase() }));
+	return code.toUpperCase();
+}
+
 function createPlayer(userId: string, index: number, maxCredits: number): Player {
 	return { userId, name: `Joueur_${index + 1}`, score: 0, credit: maxCredits };
 }
@@ -41,9 +49,47 @@ export async function getGameById(id: string): Promise<Game | null> {
 	return game ? toGame(game) : null;
 }
 
+export async function createGameFromPrevious(oldGameId: string, userId: string): Promise<Game | null> {
+	const { connection, client } = await getConnection('games');
+	const oldGame = (await connection.findOne({ _id: new ObjectId(oldGameId) })) as GameMongodb | null;
+	if (!oldGame || oldGame.createdBy !== userId) {
+		client.close();
+		return null;
+	}
+	const code = await generateUniqueCode(connection);
+	const maxPlayers = oldGame.players.length;
+	const maxCredits = oldGame.settings?.maxCredits ?? DEFAULT_SETTINGS.maxCredits;
+	const newSettings: GameSettings = {
+		...DEFAULT_SETTINGS,
+		...(oldGame.settings && { ...oldGame.settings }),
+		maxPlayers,
+	};
+	const newPlayers: Player[] = oldGame.players.map((p, i) => ({
+		userId: p.userId,
+		name: p.name,
+		score: 0,
+		credit: maxCredits,
+	}));
+	const result = await connection.insertOne({
+		name: oldGame.name,
+		code,
+		createdBy: userId,
+		createdAt: Math.round(Date.now() / 1000),
+		status: 'waiting',
+		players: newPlayers,
+		settings: newSettings,
+		configured: false,
+		startedAt: null,
+		restartedFromGameId: oldGameId,
+	});
+	const game = (await connection.findOne({ _id: result.insertedId })) as GameMongodb;
+	client.close();
+	return toGame(game);
+}
+
 export async function createGame(name: string, createdBy: string): Promise<Game> {
 	const { connection, client } = await getConnection('games');
-	const code = generateCode();
+	const code = await generateUniqueCode(connection);
 	const player = createPlayer(createdBy, 0, DEFAULT_SETTINGS.maxCredits);
 	const result = await connection.insertOne({
 		name,
