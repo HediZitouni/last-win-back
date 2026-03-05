@@ -92,7 +92,7 @@ export async function createGame(name: string, createdBy: string): Promise<Game>
 	const code = await generateUniqueCode(connection);
 	const player = createPlayer(createdBy, 0, DEFAULT_SETTINGS.maxCredits);
 	const result = await connection.insertOne({
-		name,
+		name: name ?? '',
 		code,
 		createdBy,
 		createdAt: Math.round(Date.now() / 1000),

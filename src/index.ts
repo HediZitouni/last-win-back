@@ -69,9 +69,8 @@ app.get('/lastwin/api/games/:id', async (req, res) => {
 app.post('/lastwin/api/games', async (req, res) => {
 	try {
 		const { name, createdBy } = req.body;
-		if (!name) return res.status(400).send('Missing game name');
 		if (!createdBy) return res.status(400).send('Missing createdBy');
-		const game = await createGame(name, createdBy);
+		const game = await createGame(name ?? '', createdBy);
 		res.send(game);
 	} catch (e) {
 		console.log(e);
